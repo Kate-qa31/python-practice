@@ -3,6 +3,7 @@
 # composition, enums, and object interaction.
 
 import sys
+from dataclasses import dataclass
 from datetime import datetime
 from enum import auto, StrEnum
 from typing import Literal, Self
@@ -33,6 +34,9 @@ class User:
 
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+    def __str__(self):
+        return f"ФИО: {self.full_name()}, телефон: {self.phone}"
 
 
 class UserCustomer(User):
@@ -65,19 +69,31 @@ class OrderStatus(StrEnum):
     assembled = auto()
     closed = auto()
 
+@dataclass
+class ProductInOrder:
+    count: int
+    product: Product
+
 
 class Order:
     def __init__(self, orders: dict[int, Self]):
         self._orders = orders
-        self._goods: dict[int, dict[Literal["count", "product"], int | Product]] = {}
+        # self._goods: dict[int, dict[Literal["count", "product"], int | Product]] = {}
+        self._goods: dict[int, ProductInOrder] = {}
         self._created_at: datetime | None = None
         self._status: OrderStatus | None = None
+        self._price: int | None = None
+        self._weight: int | None = None
 
 
     def create(self, goods_ids: dict[int, int], goods: dict[int, Product]):
         next_id = max(self._orders, default=0) + 1
+        # self._goods = {
+        #     product_id: {"count": count, "product": goods[product_id]}
+        #     for product_id, count in goods_ids.items()
+        # }
         self._goods = {
-            product_id: {"count": count, "product": goods[product_id]}
+            product_id: ProductInOrder(count=count, product=goods[product_id])
             for product_id, count in goods_ids.items()
         }
         self._status = OrderStatus.created
@@ -87,21 +103,28 @@ class Order:
 
     def collect(self, storage: Storage):
         for product_id, product in self._goods.items():
-            storage.remove_items(product_id, product["count"])
+            storage.remove_items(product_id, product.count)
         self._status = OrderStatus.assembled
 
-
+    @property
     def weight(self):
-        return sum(p["count"] * p["product"].weight for p in self._goods.values())
+        # return sum(p["count"] * p["product"].weight for p in self._goods.values())
+        if self._weight is None:
+            self._weight =  sum(p.count * p.product.weight for p in self._goods.values())
+        return self._weight
 
-
+    @property
     def price(self):
-        return sum(p["count"] * p["product"].price for p in self._goods.values())
+        if self._price is None:
+            self._price = sum(p.count * p.product.price for p in self._goods.values())
+        return self._price
 
 
     def close(self):
         self._status = OrderStatus.closed
 
+    # getter
+    @property
     def status(self):
         return self._status
 
@@ -124,7 +147,7 @@ class Delivery:
         self._courier = courier
 
     def start(self) -> bool:
-        if self._order.status() == OrderStatus.assembled and self._courier:
+        if self._order.status == OrderStatus.assembled and self._courier:
             self._status = DeliveryStatus.started
             return True
         return False
@@ -137,9 +160,11 @@ class Delivery:
         self._order.close()
         self._status = DeliveryStatus.canceled
 
+    @property
     def address(self):
         return self._customer.address
 
+    @property
     def status(self):
         return self._status
 
@@ -211,5 +236,14 @@ if __name__ == "__main__":
     # Успешно доставляем по адресу и проверяем статусы:
     delivery_1.finish()
 
-    print(delivery_1.status())
-    print(order_1.status())
+    print(
+        f"Заказ успешно доставлен по адресу {delivery_1.address}.\n"
+        f"Статус доставки: {delivery_1.status}\n"
+        f"Статус заказа: {order_1.status}"
+    )
+    for x in (order_1, delivery_1):
+        print(x.status)
+
+    for user_id, u in users.items():
+        user_info = f"{user_id}: {u}"
+        print(user_info)
