@@ -37,8 +37,22 @@ The `pokemonbattle_api_tests` directory includes automated tests for:
 Install the project dependencies:
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r pokemonbattle_api_tests/requirements.txt
 ```
+
+## Environment Configuration
+
+API authentication is configured using environment variables loaded from a local `.env` file.
+
+Create a `.env` file inside `pokemonbattle_api_tests/` and add your API token:
+
+```dotenv
+POKEMON_TRAINER_TOKEN=your_token_here
+```
+
+The project uses `pytest-dotenv` to load environment variables during test execution.
+
+The `.env` file is excluded from Git to keep authentication credentials private.
 
 ## Running Tests
 
@@ -47,8 +61,6 @@ Run the API tests with:
 ```bash
 python -m pytest pokemonbattle_api_tests/ -v
 ```
-
-API tests requiring authentication use the `POKEMON_TRAINER_TOKEN` environment variable. Set it before running the tests.
 
 ## Current Focus
 
