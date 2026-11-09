@@ -1,0 +1,4 @@
+TRAINER_ID = 242
+CITY = "Москва"
+POKEMON_ORIGIN_NAME = "Kevin"
+POKEMON_CHANGED_NAME = "Edwart"

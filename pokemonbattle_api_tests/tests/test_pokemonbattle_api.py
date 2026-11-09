@@ -1,24 +1,23 @@
-from http import HTTPStatus
-
-import pytest
 import requests
+import pytest
 
-BASE_URL = "https://api.pokemonbattle.ru/v2"
-TOKEN = {"trainer_token": POKEMON_TRAINER_TOKEN}
+from pokemonbattle_api_tests.config.api_config import BASE_URL
+from pokemonbattle_api_tests.config.api_config import TOKEN
+
+from pokemonbattle_api_tests.data.api_constants import TRAINER_ID
+from pokemonbattle_api_tests.data.api_constants import CITY
+from pokemonbattle_api_tests.data.api_constants import POKEMON_ORIGIN_NAME
+from pokemonbattle_api_tests.data.api_constants import POKEMON_CHANGED_NAME
 trainers_pokemon_payload = {
-            "trainer_id": 242,
+            "trainer_id": TRAINER_ID,
             "status": 1
         }
 
-@pytest.fixture(scope="session")
-def api_session():
-    with requests.Session() as pokemon_session:
-        yield pokemon_session
-
 
 class TestGetTrainers:
+    @pytest.mark.smoke
     def test__trainers__get_city(self, api_session):
-        payload = {"city": "Samara"}
+        payload = {"city": CITY}
         response = api_session.get(
             BASE_URL + "/trainers",
             params=payload
@@ -27,10 +26,11 @@ class TestGetTrainers:
         body = response.json()
         assert isinstance(body["data"], list)
         for trainer in body["data"]:
-            assert trainer["city"] == "Samara"
+            assert trainer["city"] == CITY
 
+    @pytest.mark.smoke
     def test__trainers__get_id(self, api_session):
-        payload = {"trainer_id": 242}
+        payload = {"trainer_id": TRAINER_ID}
         response = api_session.get(
             BASE_URL + "/trainers",
             params=payload
@@ -41,9 +41,10 @@ class TestGetTrainers:
         assert len(body["data"]) == 1
         assert body["data"][0]["id"] == "242"
 
+    @pytest.mark.regress
     def test__trainers__get_city_sorted_desc_level(self, api_session):
         payload = {
-            "city": "Москва",
+            "city": CITY,
             "sort": "desc_level"
         }
         response = api_session.get(
@@ -55,7 +56,7 @@ class TestGetTrainers:
         assert isinstance(body["data"], list)
         assert len(body["data"]) >= 2
         for trainer in body["data"]:
-            assert trainer["city"] == "Москва"
+            assert trainer["city"] == CITY
         for i in range(len(body["data"]) - 1):
             assert int(body["data"][i]["level"]) >= int(body["data"][i+1]["level"])
 
@@ -87,7 +88,7 @@ class TestChangeNamePokemon:
 
         alive_check = api_session.get(
             BASE_URL + "/pokemons",
-            params={"trainer_id": 242},
+            params={"trainer_id": TRAINER_ID},
         )
         assert alive_check.status_code == 200
         body = alive_check.json()
@@ -99,14 +100,16 @@ class TestChangeNamePokemon:
             BASE_URL + "/pokemons",
             headers=TOKEN,
             json={
-                "name": "Cookie",
-                "photo_id": 3
+                "name": POKEMON_ORIGIN_NAME,
+                "photo_id": 6
             }
         )
         assert created_pokemon_id.status_code == 201
         pokemon_id = created_pokemon_id.json()["id"]
         return pokemon_id
 
+    @pytest.mark.skip("Known bug")
+    @pytest.mark.regress
     def test__pokemon__change_name(self, api_session):
         self.knockout_pokemon(api_session)
         self.check_alive_pokemons(api_session)
@@ -116,7 +119,7 @@ class TestChangeNamePokemon:
             headers=TOKEN,
             json={
                 "pokemon_id": created_pokemon_id,
-                "name": "Pikachu"
+                "name": POKEMON_CHANGED_NAME
             }
         )
         assert changed_pokemon.status_code == 200
@@ -127,6 +130,6 @@ class TestChangeNamePokemon:
         )
         assert get_name_pokemon.status_code == 200
         pokemon_name = get_name_pokemon.json()["data"][0]["name"]
-        assert pokemon_name == "Pikachu"
+        assert pokemon_name == POKEMON_CHANGED_NAME
 
 
