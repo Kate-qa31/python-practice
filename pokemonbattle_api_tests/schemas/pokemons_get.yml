@@ -1,0 +1,41 @@
+type: object
+additionalProperties: false
+properties:
+  status:
+    type: string
+  next_page:
+    type: boolean
+  data:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        stage:
+          type: string
+        photo_id:
+          type: integer
+        attack:
+          type: integer
+        trainer_id:
+          type: string
+        status:
+          type: integer
+        in_pokeball:
+          type: integer
+      required:
+        - id
+        - name
+        - stage
+        - photo_id
+        - attack
+        - trainer_id
+        - status
+        - in_pokeball
+required:
+  - data
+  - next_page
