@@ -199,3 +199,79 @@ class TestGetMe:
             assert body["status"] == "error"
         with check:
             assert body["message"] == "Мы не узнали этот токен. Возможные проблемы: он написан с опечаткой, перепутаны токены для Прода и Стейджа или аккаунт с этим токеном не активирован"
+
+
+class TestGetBattle:
+    def test__get_battle_without_parameters(self, api_session):
+        response = api_session.get(
+            BASE_URL + "/battle",
+            headers=TOKEN
+        )
+        assert response.status_code == 200
+        body = response.json()
+        template = load_yaml("battles_get.yml")
+        validate(body, template)
+
+class TestGetAchievements:
+    def test__get_achievements(self, api_session):
+        response = api_session.get(
+            BASE_URL + "/achievements",
+            headers=TOKEN
+        )
+        assert response.status_code == 200
+        body = response.json()
+        template = load_yaml("achievements_get.yml")
+        validate(body, template)
+        deepdiff_template = {
+            'data':
+                [
+                    {
+                        'slug': "beginning",
+                        'is_reached': False
+                    },
+                    {
+                        'slug': "out_of_battles",
+                        'is_reached': False
+                    },
+                    {
+                        'slug': "self_knockout",
+                        'is_reached': False
+                    },
+                    {
+                        'slug': "max_level",
+                        'is_reached': False
+                    },
+                    {
+                        'slug': "one_vs_seven",
+                        'is_reached': False
+                    },
+                    {
+                        'slug': "five_battles",
+                        'is_reached': False
+                    },
+                    {
+                        'slug': "three_defends",
+                        'is_reached': False
+                    }
+                ]
+        }
+        compare = DeepDiff(
+            deepdiff_template, body,
+            exclude_regex_paths=[
+                r"root\['data'\]\[\d+\]\['is_reached'\]"
+            ]
+        )
+        assert not compare, compare
+
+    def test__get_achievements__invalid_query(self, check):
+        response = requests.get(
+            BASE_URL + "/achievements",
+            headers=TOKEN,
+            params={"is_reached": "invalid_query"}
+        )
+        assert response.status_code == 422
+        body = response.json()
+        with check:
+            assert body["status"] == "error"
+        with check:
+            assert body["message"] == "[{'type': 'bool_parsing', 'loc': ('query', 'is_reached'), 'msg': 'Input should be a valid boolean, unable to interpret input', 'input': 'invalid_quiery'}]"
